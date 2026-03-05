@@ -1,36 +1,30 @@
 package application;
 
-import java.util.Date;
+
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 
 import model.dao.DaoFactory;
-import model.dao.SellerDao;
+import model.dao.DepartmentDao;
 import model.entities.Department;
-import model.entities.Seller;
 
-public class Program {
+public class Program2 {
 
 	public static void main(String[] args) {
-		Scanner sc = new Scanner(System.in);
+		//Scanner sc = new Scanner(System.in);
 
-		SellerDao sellerDao = DaoFactory.createSellerDao();
-		System.out.println("=== TEST 1: seller findById =====");
-		Seller seller = sellerDao.findById(3);
-		System.out.println(seller);
+		DepartmentDao departmentDao = DaoFactory.createDepartmentDao();
+		System.out.println("=== TEST 1: department findById =====");
+		Department department = departmentDao.findById(2);
+		System.out.println(department);
 
-		System.out.println("\n=== TEST 2: seller findByDepartment =====");
-		Department department = new Department(2, null);
-		List<Seller> list = sellerDao.findByDepartment(department);
-		for (Seller obj : list) {
+        List<Department>list= new ArrayList<>();
+		System.out.println("\n=== TEST 2: Department findAll =====");
+		list = departmentDao.finAll();
+		for (Department obj : list) {
 			System.out.println(obj);
 		}
-
-		System.out.println("\n=== TEST 3: seller findAll =====");
-		list = sellerDao.finAll();
-		for (Seller obj : list) {
-			System.out.println(obj);
-		}
+		/* 
 
 		System.out.println("\n=== TEST 4: seller insert =====");
 		Seller newSeller = new Seller(null, "Sofya", "sofya@uol.com", new Date(), 4000.0, department);
@@ -49,7 +43,6 @@ public class Program {
 		int id = sc.nextInt();
         sellerDao.deleteById(id);
 		System.out.println("Delete completed");
-		sc.close();
+		sc.close();*/
 	}
-
 }

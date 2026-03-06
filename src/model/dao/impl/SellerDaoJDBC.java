@@ -16,14 +16,39 @@ import model.dao.SellerDao;
 import model.entities.Department;
 import model.entities.Seller;
 
+/**
+ * JDBC implementation of the {@link SellerDao} interface.
+ * <p>
+ * Provides CRUD operations for {@link model.entities.Seller} objects
+ * backed by a relational database. Each public method manages its own
+ * {@link java.sql.PreparedStatement} and handles SQLExceptions by
+ * wrapping them in {@link db.DbException}.
+ */
 public class SellerDaoJDBC implements SellerDao {
 
     private Connection conn;
 
+    /**
+     * Creates a new DAO using the provided database connection.
+     *
+     * @param conn an open {@link java.sql.Connection} to be used for all
+     *             database operations. The caller is responsible for
+     *             managing the connection's lifecycle (closing it when done).
+     */
     public SellerDaoJDBC(Connection conn) {
         this.conn = conn;
     }
 
+    /**
+     * Inserts the given {@link Seller} into the database.
+     * <p>
+     * The seller's id field will be populated with the generated key
+     * after successful insertion.
+     *
+     * @param obj the seller to insert; must not be {@code null}
+     * @throws db.DbException if a database error occurs or no rows are
+     *                         affected by the INSERT statement
+     */
     @Override
     public void insert(Seller obj) {
         PreparedStatement st = null;
@@ -59,14 +84,23 @@ public class SellerDaoJDBC implements SellerDao {
 
     }
 
+    /**
+     * Updates the database record corresponding to the given seller.
+     * The seller's {@code id} must already exist in the database; all
+     * other fields will be written to the corresponding columns.
+     *
+     * @param obj the seller containing updated values; must not be
+     *            {@code null} and must have a non-null id
+     * @throws db.DbException if a database error occurs during the UPDATE
+     */
     @Override
     public void update(Seller obj) {
         PreparedStatement st = null;
         try {
             st = conn.prepareStatement(
                     "UPDATE seller "
-                            + "SET Name = ?, Email = ?, BirthDate = ?, BaseSalary = ?, DepartmentId = ? "
-                            + "WHERE id = ?");
+                    + "SET Name = ?, Email = ?, BirthDate = ?, BaseSalary = ?, DepartmentId = ? "
+                    + "WHERE id = ?");
             st.setString(1, obj.getName());
             st.setString(2, obj.getEmail());
             st.setDate(3, new java.sql.Date(obj.getBirthDate().getTime()));
@@ -84,6 +118,13 @@ public class SellerDaoJDBC implements SellerDao {
 
     }
 
+    /**
+     * Deletes the seller record with the specified id from the database.
+     *
+     * @param id the id of the seller to remove;
+     *           passing {@code null} will result in a SQLException
+     * @throws db.DbException if a database error occurs during deletion
+     */
     @Override
     public void deleteById(Integer id) {
         PreparedStatement st = null;
@@ -101,6 +142,17 @@ public class SellerDaoJDBC implements SellerDao {
     }
 
 
+    /**
+     * Retrieves a seller from the database using its id.
+     * <p>
+     * Performs an inner join with the department table to populate the
+     * seller's {@link model.entities.Department} object.
+     *
+     * @param id the id of the seller to look up
+     * @return a {@link Seller} instance if found, or {@code null} if no
+     *         matching record exists
+     * @throws db.DbException if a database error occurs
+     */
     @Override
     public Seller findById(Integer id) {
         PreparedStatement st = null;
@@ -128,6 +180,18 @@ public class SellerDaoJDBC implements SellerDao {
         }
     }
 
+    /**
+     * Finds all sellers who belong to the specified department.
+     * <p>
+     * The returned list is ordered by seller name. A cache map is used to
+     * ensure that only one {@link Department} instance is created per
+     * department id.
+     *
+     * @param department the department whose sellers should be retrieved;
+     *                   must not be {@code null}
+     * @return a list of sellers for the given department (may be empty)
+     * @throws db.DbException if a database error occurs
+     */
     @Override
     public List<Seller> findByDepartment(Department department) {
         PreparedStatement st = null;
@@ -164,6 +228,16 @@ public class SellerDaoJDBC implements SellerDao {
         }
     }
 
+    /**
+     * Helper method that creates a {@link Seller} entity from the current
+     * row of the given {@link ResultSet}. The associated department
+     * instance is provided by the caller (either created or cached).
+     *
+     * @param rs  the result set positioned at a valid row
+     * @param dep the department to assign to the seller
+     * @return a fully populated {@link Seller} object
+     * @throws SQLException if an error occurs while reading from the result set
+     */
     private Seller instantiateSeller(ResultSet rs, Department dep) throws SQLException {
         Seller obj = new Seller();
         obj.setId(rs.getInt("Id"));
@@ -176,6 +250,14 @@ public class SellerDaoJDBC implements SellerDao {
 
     }
 
+    /**
+     * Helper method that constructs a {@link Department} object using
+     * data from the current row of the provided {@link ResultSet}.
+     *
+     * @param rs the result set positioned at a valid row
+     * @return a {@link Department} populated with id and name
+     * @throws SQLException if an error occurs accessing the result set
+     */
     private Department instantiateDepartment(ResultSet rs) throws SQLException {
         Department dep = new Department();
         dep.setId(rs.getInt("DepartmentId"));
@@ -183,6 +265,15 @@ public class SellerDaoJDBC implements SellerDao {
         return dep;
     }
 
+    /**
+     * Retrieves all sellers from the database, ordered by name.
+     * <p>
+     * Each seller is joined with its department, reusing department
+     * instances via a local cache to avoid duplicates.
+     *
+     * @return a list containing every seller in the system (empty if none)
+     * @throws db.DbException if a database error occurs
+     */
     @Override
     public List<Seller> finAll() {
         PreparedStatement st = null;
